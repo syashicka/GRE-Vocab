@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GRE Vocabulary Database</title>
+    <title>GRE Vocabulary Hub</title>
     <style>
-        /* Modern styling for the webpage layout */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f5f7fb;
@@ -15,7 +14,7 @@
         }
         .header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
         }
         .header h1 {
             color: #1e3a8a;
@@ -25,7 +24,44 @@
             color: #64748b;
             font-size: 1.1rem;
         }
-        /* Grid layout that changes rows based on screen size */
+
+        /* --- NAVIGATION TABS --- */
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            max-width: 400px;
+            margin: 0 auto 40px auto;
+            background: #cbd5e1;
+            padding: 5px;
+            border-radius: 8px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        .tab-btn.active {
+            background: #ffffff;
+            color: #1e3a8a;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .view-section {
+            display: none;
+        }
+        .view-section.active {
+            display: block;
+        }
+
+        /* --- SECTION 1: VOCAB GRID STUDY STYLES --- */
         .vocab-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -33,161 +69,318 @@
             max-width: 1200px;
             margin: 0 auto;
         }
-        /* Card design for individual words */
         .card {
             position: relative;
             background: #ffffff;
             border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             padding: 24px;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             border-top: 4px solid #3b82f6;
         }
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .checkbox-container { position: absolute; top: 15px; right: 15px; }
+        .card-checkbox { width: 18px; height: 18px; cursor: pointer; }
+        
+        /* UPDATED STYLING: Highlights the card when SELECTED for the quiz/flashcards */
+        .card.selected { 
+            border-top-color: #10b981; 
+            background-color: #f0fdf4; /* Light green tint showing it's selected */
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+        }
+        
+        .word { font-size: 1.5rem; font-weight: 700; color: #1e3a8a; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.5px; padding-right: 25px;}
+        .meaning { font-style: italic; color: #475569; margin-bottom: 15px; line-height: 1.4; }
+        .section-title { font-size: 0.85rem; font-weight: bold; text-transform: uppercase; color: #94a3b8; margin: 10px 0 2px 0; }
+        .sentence { color: #334155; background-color: #f8fafc; padding: 8px 12px; border-left: 3px solid #cbd5e1; margin: 5px 0; font-size: 0.95rem; }
+        .synonyms { color: #059669; font-weight: 500; font-size: 0.95rem; }
+
+        /* --- SECTION 2: 3D FLIP FLASHCARD STYLES --- */
+        .flashcard-wrapper {
+            max-width: 500px;
+            margin: 0 auto;
+            perspective: 1000px; 
+        }
+        
+        .flashcard-counter {
+            text-align: center;
+            color: #64748b;
+            font-weight: 600;
+            margin-bottom: 15px;
         }
 
-        .checkbox-container {
-            position: absolute;  /* Pins it precisely in place */
-            top: 15px;           /* 15 pixels down from the top edge */
-            right: 15px;         /* 15 pixels in from the right edge */
+        .flashcard-inner {
+            position: relative;
+            width: 100%;
+            height: 320px;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .card-checkbox {
-            width: 18px;         /* Makes the checkbox slightly larger */
-            height: 18px;        /* Matches the width to keep it square */
-            cursor: pointer;     /* Changes your mouse cursor to a clicking hand */
-        }
-        .card.completed {
-            background-color: #e2e8f0;  /* Changes white background to slate-grey */
-            border-top-color: #64748b;  /* Changes the bright blue top bar to grey */
-            opacity: 0.6;               /* Fades out the entire card by 40% */
+        
+        .flashcard-inner.flipped {
+            transform: rotateY(180deg);
         }
 
-        .card.completed .word {
-            color: #475569; 
-            text-decoration: line-through; /* Adds a strike-through line */
+        .flashcard-front, .flashcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden; 
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
-/* Darkens the example sentence background box to match */
-        .card.completed .sentence {
-            background-color: #cbd5e1; 
+        .flashcard-front {
+            background: #ffffff;
+            border-top: 6px solid #10b981;
+            align-items: center;
         }
-        .word {
-            font-size: 1.5rem;
-            font-weight: 700;
+        .flashcard-front h2 {
+            font-size: 2.5rem;
             color: #1e3a8a;
             margin: 0 0 10px 0;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
         }
-        .meaning {
-            font-style: italic;
-            color: #475569;
-            margin-bottom: 15px;
-            line-height: 1.4;
-        }
-        .section-title {
-            font-size: 0.85rem;
-            font-weight: bold;
-            text-transform: uppercase;
+        .flashcard-front p {
             color: #94a3b8;
-            margin: 10px 0 2px 0;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            font-weight: bold;
         }
-        .sentence {
-            color: #334155;
-            background-color: #f8fafc;
-            padding: 8px 12px;
-            border-left: 3px solid #cbd5e1;
-            margin: 5px 0;
-            font-size: 0.95rem;
+
+        .flashcard-back {
+            background: #ffffff;
+            border-top: 6px solid #3b82f6;
+            transform: rotateY(180deg); 
+            justify-content: flex-start;
+            overflow-y: auto;
         }
-        .synonyms {
-            color: #059669;
-            font-weight: 500;
-            font-size: 0.95rem;
+
+        /* ACTIONS BUTTON PANEL */
+        .flashcard-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            max-width: 500px;
+            margin: 25px auto 0 auto;
         }
-        .loading {
+        .action-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        .btn-review { background: #cbd5e1; color: #475569; }
+        .btn-review:hover { background: #b91c1c; color: white; }
+        .btn-mastered { background: #10b981; color: white; }
+        .btn-mastered:hover { background: #059669; }
+
+        .completion-screen {
             text-align: center;
-            font-size: 1.2rem;
-            color: #64748b;
-            grid-column: 1 / -1;
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
+
+        .loading { text-align: center; font-size: 1.2rem; color: #64748b; grid-column: 1 / -1; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>GRE Vocabulary Database</h1>
-        <p>Dynamic flashcards generated directly from an Excel/Google Sheet</p>
+        <h1>GRE Vocabulary Hub</h1>
+        <p>Check the boxes on words you want to practice, then switch to Flashcard Mode!</p>
     </div>
 
-    <div id="vocab-container" class="vocab-grid">
-        <div class="loading">Loading vocabulary words...</div>
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('study-view')">Study Grid</button>
+        <button class="tab-btn" onclick="switchTab('flashcard-view')">Flashcard Mode</button>
+    </div>
+
+    <div id="study-view" class="view-section active">
+        <div id="vocab-container" class="vocab-grid">
+            <div class="loading">Loading vocabulary words...</div>
+        </div>
+    </div>
+
+    <div id="flashcard-view" class="view-section">
+        <div class="flashcard-wrapper">
+            <div id="flashcard-counter" class="flashcard-counter">Word 0 of 0</div>
+            
+            <div id="flashcard-container">
+                </div>
+
+            <div class="flashcard-actions" id="flashcard-buttons">
+                <button class="action-btn btn-review" onclick="nextFlashcard()">Next Word</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        // 1. PLACE YOUR API URL HERE
-        // Example: 'https://api.sheety.co/username/api/sheet1'
         const apiUrl = 'https://api.sheety.co/4be2f50d94b92e0327b7d3484c5f80ea/greWords/sheet1'; 
+        let globalWordsArray = [];     // Holds ALL rows from the spreadsheet
+        let customPracticeDeck = [];   // NEW: Holds ONLY the words the user checked
+        let activeFlashcardIndex = 0;
 
+        // --- TAB SELECTION ENGINE ---
+        function switchTab(viewId) {
+            document.querySelectorAll('.view-section').forEach(view => view.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(viewId).classList.add('active');
+            event.currentTarget.classList.add('active');
+
+            // NEW LOGIC: When entering Flashcard Mode, filter the spreadsheet data
+            if (viewId === 'flashcard-view') {
+                buildCustomDeck();
+                activeFlashcardIndex = 0;
+                loadFlashcard();
+            }
+        }
+
+        // --- NEW: FILTERS CHECKED WORDS TO BUILD CUSTOM DECK ---
+        function buildCustomDeck() {
+            // Find all checkboxes that are currently ticked
+            const checkedBoxes = document.querySelectorAll('.card-checkbox:checked');
+            customPracticeDeck = [];
+
+            checkedBoxes.forEach(checkbox => {
+                // Get the unique loop index stored inside each checkbox data attribute
+                const wordIndex = checkbox.getAttribute('data-index');
+                // Pull that specific word item from our master spreadsheet data list
+                customPracticeDeck.push(globalWordsArray[wordIndex]);
+            });
+        }
+
+        // --- DATA FETCH INITIALIZATION ---
         async function fetchVocabData() {
             try {
                 const response = await fetch(apiUrl);
                 const data = await response.json();
                 
-                // 2. Adjust 'sheet1' below to match the name of your data object 
-                // Sheety usually names this after your spreadsheet tab name.
-                const wordsArray = data.sheet1; 
-
-                const container = document.getElementById('vocab-container');
-                container.innerHTML = ''; // Clear out the "Loading..." message
-
-                // Loop through each row of your spreadsheet
-                wordsArray.forEach((item,index) => {
-                    const card = document.createElement('div');
-                    card.className = 'card';
-                    
-                    // 3. Make sure 'word', 'meaning', 'sampleSentence', and 'synonyms' 
-                    // match the lowercase headers generated by your API tool.
-                    card.innerHTML = `
-                        <div class="checkbox-container">
-                            <input type="checkbox" id="check-${index}" class="card-checkbox">
-                        </div>
-                        <h2 class="word">${item.words || 'N/A'}</h2>
-                        <div class="meaning">${item.meaning || 'No definition available.'}</div>
-                        
-                        <div class="section-title">Example Sentence</div>
-                        <div class="sentence">"${item.sentences || 'N/A'}"</div>
-                        
-                        <div class="section-title">Synonyms</div>
-                        <div class="synonyms">${item.synonyms || 'None listed.'}</div>
-                    `;
-
-                    const checkbox = card.querySelector('.card-checkbox');
-                    checkbox.addEventListener('change', function() {
-                        if (this.checked) {
-                            // If the checkbox is clicked on, add the ".completed" styling class
-                            card.classList.add('completed');
-                        } else {
-                            // If it's unclicked, remove it to return back to normal white style
-                            card.classList.remove('completed');
-                        }
-                    });
-                    
-                    container.appendChild(card);
-                });
+                globalWordsArray = data.sheet1; 
+                renderStudyGrid();
 
             } catch (error) {
-                console.error('Error parsing spreadsheet data:', error);
+                console.error('Error parsing data streams:', error);
                 document.getElementById('vocab-container').innerHTML = `
-                    <div class="loading" style="color: #dc2626;">
-                        Failed to load data. Please verify your API URL configuration.
-                    </div>`;
+                    <div class="loading" style="color: #dc2626;">Failed to load cloud spreadsheet data.</div>`;
             }
         }
 
-        // Execute function on page load
+        // --- RENDER STUDY GRID ---
+        function renderStudyGrid() {
+            const container = document.getElementById('vocab-container');
+            container.innerHTML = ''; 
+
+            globalWordsArray.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                // Note the 'data-index="${index}"' property attached to the checkbox below
+                card.innerHTML = `
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="check-${index}" class="card-checkbox" data-index="${index}">
+                    </div>
+                    <h2 class="word">${item.word || item.words || 'N/A'}</h2>
+                    <div class="meaning">${item.meaning || 'No definition available.'}</div>
+                    <div class="section-title">Example Sentence</div>
+                    <div class="sentence">"${item.sentence || item.sentences || item.sampleSentence || 'N/A'}"</div>
+                    <div class="section-title">Synonyms</div>
+                    <div class="synonyms">${item.synonyms || 'None listed.'}</div>
+                `;
+
+                const checkbox = card.querySelector('.card-checkbox');
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        card.classList.add('selected'); // Turns green when selected
+                    } else {
+                        card.classList.remove('selected');
+                    }
+                });
+                
+                container.appendChild(card);
+            });
+        }
+
+        // --- MODIFIED FLASHCARD GENERATION LOGIC ---
+        function loadFlashcard() {
+            const container = document.getElementById('flashcard-container');
+            const counter = document.getElementById('flashcard-counter');
+            const buttons = document.getElementById('flashcard-buttons');
+
+            // SAFEGUARD 1: If the user didn't check any words at all
+            if (customPracticeDeck.length === 0) {
+                counter.innerText = "Deck Empty";
+                buttons.style.display = "none";
+                container.innerHTML = `
+                    <div class="completion-screen" style="border-top: 4px solid #b91c1c;">
+                        <h2>⚠️ No Words Selected</h2>
+                        <p>Go back to the <strong>Study Grid</strong> and check the boxes next to the words you want to practice!</p>
+                        <button class="action-btn btn-review" style="max-width:220px; margin-top:15px;" onclick="document.querySelectorAll('.tab-btn')[0].click()">Go to Study Grid</button>
+                    </div>`;
+                return;
+            }
+
+            // SAFEGUARD 2: If the user finishes their customized selected stack
+            if (activeFlashcardIndex >= customPracticeDeck.length) {
+                counter.innerText = "Practice Complete!";
+                buttons.style.display = "none";
+                container.innerHTML = `
+                    <div class="completion-screen">
+                        <h2>🎉 Great Session!</h2>
+                        <p>You went through all <strong>${customPracticeDeck.length}</strong> words you selected.</p>
+                        <button class="action-btn btn-mastered" style="max-width:200px; margin-top:15px;" onclick="switchTab('flashcard-view')">Restart Selected Deck</button>
+                    </div>`;
+                return;
+            }
+
+            // Normal State: Display the selected flashcard card
+            buttons.style.display = "flex";
+            counter.innerText = `Word ${activeFlashcardIndex + 1} of ${customPracticeDeck.length}`;
+
+            let currentItem = customPracticeDeck[activeFlashcardIndex];
+
+            container.innerHTML = `
+                <div class="flashcard-inner" onclick="flipCard(this)">
+                    <div class="flashcard-front">
+                        <h2>${currentItem.word || currentItem.words || 'N/A'}</h2>
+                        <p>💡 Click to Reveal Definition</p>
+                    </div>
+                    <div class="flashcard-back">
+                        <div class="section-title">Definition</div>
+                        <div class="meaning" style="font-size:1.1rem; margin-bottom:20px;">${currentItem.meaning || 'No definition available.'}</div>
+                        
+                        <div class="section-title">Example Sentence</div>
+                        <div class="sentence" style="margin-bottom:20px;">"${currentItem.sentence || currentItem.sentences || currentItem.sampleSentence || 'N/A'}"</div>
+                        
+                        <div class="section-title">Synonyms</div>
+                        <div class="synonyms">${currentItem.synonyms || 'None listed.'}</div>
+                    </div>
+                </div>`;
+        }
+
+        function flipCard(cardInnerElement) {
+            cardInnerElement.classList.toggle('flipped');
+        }
+
+        function nextFlashcard() {
+            activeFlashcardIndex++;
+            loadFlashcard();
+        }
+
         fetchVocabData();
     </script>
 </body>
