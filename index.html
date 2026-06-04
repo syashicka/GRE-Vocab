@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GRE Vocabulary Database</title>
+    <style>
+        /* Modern styling for the webpage layout */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fb;
+            color: #333;
+            margin: 0;
+            padding: 40px 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            color: #1e3a8a;
+            margin-bottom: 5px;
+        }
+        .header p {
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+        /* Grid layout that changes rows based on screen size */
+        .vocab-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        /* Card design for individual words */
+        .card {
+            position: relative;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 24px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border-top: 4px solid #3b82f6;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .checkbox-container {
+            position: absolute;  /* Pins it precisely in place */
+            top: 15px;           /* 15 pixels down from the top edge */
+            right: 15px;         /* 15 pixels in from the right edge */
+        }
+        .card-checkbox {
+            width: 18px;         /* Makes the checkbox slightly larger */
+            height: 18px;        /* Matches the width to keep it square */
+            cursor: pointer;     /* Changes your mouse cursor to a clicking hand */
+        }
+        .card.completed {
+            background-color: #e2e8f0;  /* Changes white background to slate-grey */
+            border-top-color: #64748b;  /* Changes the bright blue top bar to grey */
+            opacity: 0.6;               /* Fades out the entire card by 40% */
+        }
+
+        .card.completed .word {
+            color: #475569; 
+            text-decoration: line-through; /* Adds a strike-through line */
+        }
+
+/* Darkens the example sentence background box to match */
+        .card.completed .sentence {
+            background-color: #cbd5e1; 
+        }
+        .word {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e3a8a;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .meaning {
+            font-style: italic;
+            color: #475569;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+        .section-title {
+            font-size: 0.85rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #94a3b8;
+            margin: 10px 0 2px 0;
+        }
+        .sentence {
+            color: #334155;
+            background-color: #f8fafc;
+            padding: 8px 12px;
+            border-left: 3px solid #cbd5e1;
+            margin: 5px 0;
+            font-size: 0.95rem;
+        }
+        .synonyms {
+            color: #059669;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+        .loading {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #64748b;
+            grid-column: 1 / -1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>GRE Vocabulary Database</h1>
+        <p>Dynamic flashcards generated directly from an Excel/Google Sheet</p>
+    </div>
+
+    <div id="vocab-container" class="vocab-grid">
+        <div class="loading">Loading vocabulary words...</div>
+    </div>
+
+    <script>
+        // 1. PLACE YOUR API URL HERE
+        // Example: 'https://api.sheety.co/username/api/sheet1'
+        const apiUrl = 'https://api.sheety.co/4be2f50d94b92e0327b7d3484c5f80ea/greWords/sheet1'; 
+
+        async function fetchVocabData() {
+            try {
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                
+                // 2. Adjust 'sheet1' below to match the name of your data object 
+                // Sheety usually names this after your spreadsheet tab name.
+                const wordsArray = data.sheet1; 
+
+                const container = document.getElementById('vocab-container');
+                container.innerHTML = ''; // Clear out the "Loading..." message
+
+                // Loop through each row of your spreadsheet
+                wordsArray.forEach((item,index) => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    
+                    // 3. Make sure 'word', 'meaning', 'sampleSentence', and 'synonyms' 
+                    // match the lowercase headers generated by your API tool.
+                    card.innerHTML = `
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="check-${index}" class="card-checkbox">
+                        </div>
+                        <h2 class="word">${item.words || 'N/A'}</h2>
+                        <div class="meaning">${item.meaning || 'No definition available.'}</div>
+                        
+                        <div class="section-title">Example Sentence</div>
+                        <div class="sentence">"${item.sentences || 'N/A'}"</div>
+                        
+                        <div class="section-title">Synonyms</div>
+                        <div class="synonyms">${item.synonyms || 'None listed.'}</div>
+                    `;
+
+                    const checkbox = card.querySelector('.card-checkbox');
+                    checkbox.addEventListener('change', function() {
+                        if (this.checked) {
+                            // If the checkbox is clicked on, add the ".completed" styling class
+                            card.classList.add('completed');
+                        } else {
+                            // If it's unclicked, remove it to return back to normal white style
+                            card.classList.remove('completed');
+                        }
+                    });
+                    
+                    container.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error('Error parsing spreadsheet data:', error);
+                document.getElementById('vocab-container').innerHTML = `
+                    <div class="loading" style="color: #dc2626;">
+                        Failed to load data. Please verify your API URL configuration.
+                    </div>`;
+            }
+        }
+
+        // Execute function on page load
+        fetchVocabData();
+    </script>
+</body>
+</html>
